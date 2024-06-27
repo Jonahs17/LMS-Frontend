@@ -1,16 +1,16 @@
-import { useEffect } from 'react'
-import { toast, Toaster } from 'react-hot-toast'
+import './App.css';
+
+import { Route, Routes } from 'react-router-dom';
+
+import Home from './pages/Home';
 
 function App() {
-  useEffect(() => {
-    toast.success('Hello');
-  }, []);
+  
 
   return (
-    <div>
-      <h1>Hello world!</h1>
-      <Toaster /> {/* Ensure Toaster is included in the component tree */}
-    </div>
+    <Routes>
+      <Route path='/' element={<Home/>}/>
+    </Routes>
   )
 }
 
