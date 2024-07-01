@@ -1,24 +1,25 @@
+import toast from "react-hot-toast"; // Import toast
 import { AiFillCloseCircle } from "react-icons/ai";
 import { FiMenu } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 
 import Footer from "../components/Footer.jsx";
+import { logout } from "../redux/slices/authSlice.js";
 
-function HomeLayout({ children }){
-
+function HomeLayout({ children }) {
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
-    const isLoggedIn = useSelector((state) => state?.auth?.isLoggedIn)
-    const role = useSelector((state) => state?.auth?.role)
+    const isLoggedIn = useSelector((state) => state?.auth?.isLoggedIn);
+    const role = useSelector((state) => state?.auth?.role);
 
-    function changeWidth(){
+    function changeWidth() {
         const drawerSide = document.getElementsByClassName("drawer-side");
         drawerSide[0].style.width = 'auto';
     }
 
-    function hideDrawer(){
+    function hideDrawer() {
         const element = document.getElementsByClassName('drawer-toggle');
         element[0].checked = false;
 
@@ -26,21 +27,25 @@ function HomeLayout({ children }){
         drawerSide[0].style.width = '0';
     }
 
-    function onLogout(e){
-
+    async function onLogout(e) {
         e.preventDefault();
 
-        navigate('/')
+        const response = await dispatch(logout());
+
+        if (response?.meta?.requestStatus === 'fulfilled') {
+            navigate('/');
+        } else {
+            toast.error(response.payload || "Logout failed");
+        }
     }
 
-
-    return(
+    return (
         <div className="min-h-[90vh]">
             <div className="drawer absolute left-0 z-50 w-full ">
                 <input id="my-drawer" type="checkbox" className="drawer-toggle" />
                 <div className="drawer-content">
                     <label htmlFor="my-drawer">
-                        <FiMenu onClick={changeWidth} size={"32px"} className="font-bold text-white m-4"/>
+                        <FiMenu onClick={changeWidth} size={"32px"} className="font-bold text-white m-4" />
                     </label>
                 </div>
                 <div className="drawer-side w-0">
@@ -48,26 +53,22 @@ function HomeLayout({ children }){
                     <ul className='menu p-4 w-48 h-[100%] sm:w-80 bg-base-200 text-base-content relative'>
                         <li className='w-fit absolute right-2 z-50'>
                             <button onClick={hideDrawer}>
-                                <AiFillCloseCircle size={24}/>
+                                <AiFillCloseCircle size={24} />
                             </button>
                         </li>
                         <li>
                             <Link to="/"> Home </Link>
                         </li>
                         {isLoggedIn && role === "ADMIN" && (
-                            <li>
-                                <Link to="/admin/dashboard">Admin Dashboard</Link>
-                            </li>
-                        )
-
-                        }
-                        {isLoggedIn && role === "ADMIN" && (
-                            <li>
-                                <Link to="/course/create">Create Course</Link>
-                            </li>
-                        )
-
-                        }
+                            <>
+                                <li>
+                                    <Link to="/admin/dashboard">Admin Dashboard</Link>
+                                </li>
+                                <li>
+                                    <Link to="/course/create">Create Course</Link>
+                                </li>
+                            </>
+                        )}
                         <li>
                             <Link to="/about"> About us </Link>
                         </li>
@@ -100,21 +101,16 @@ function HomeLayout({ children }){
                                     </button>
                                 </div>
                             </li>
-                        )
-
-                        }
+                        )}
                     </ul>
                 </div>
             </div>
 
             {children}
 
-            <Footer/>
-
+            <Footer />
         </div>
     );
-
 }
 
 export default HomeLayout;
-

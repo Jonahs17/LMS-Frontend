@@ -26,7 +26,17 @@ export const login = createAsyncThunk('/auth/signin', async (data, { rejectWithV
         const response = await axiosInstance.post("/user/login", data);
         return response.data;
     } catch (error) {
-        const message = error?.response?.data?.message || "Failed creation";
+        const message = error?.response?.data?.message || "Failed to login";
+        return rejectWithValue(message);
+    }
+});
+
+export const logout = createAsyncThunk('/auth/logout', async (_, { rejectWithValue }) => {
+    try {
+        const response = await axiosInstance.post("/user/logout");
+        return response.data;
+    } catch (error) {
+        const message = error?.response?.data?.message || "Failed to logout";
         return rejectWithValue(message);
     }
 });
@@ -72,6 +82,18 @@ const authSlice = createSlice({
                 state.isLoggedIn = false;
                 state.error = action.payload;
                 toast.error(action.payload);
+            })
+            .addCase(logout.fulfilled, (state) => {
+                state.loading = false;
+                state.isLoggedIn = false;
+                state.data = {};
+                state.role = "";
+                localStorage.clear();
+                toast.success("Logged out successfully!");
+            })
+            .addCase(logout.rejected, (state, action) => {
+                state.loading = false;
+                toast.error(action.payload || "Logout failed");
             });
     }
 });
