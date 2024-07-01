@@ -1,37 +1,79 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import toast from "react-hot-toast";
 
 import axiosInstance from "../../config/axiosInstance";
 
-const initailState = {
-    isLoggedIn : localStorage.getItem('isLoggedIn') || false,
-    role : localStorage.getItem('role')  || "",
-    data : localStorage.getItem('data')  || {} 
-}
+const initialState = {
+    isLoggedIn: localStorage.getItem('isLoggedIn') || false,
+    role: localStorage.getItem('role') || "",
+    data: JSON.parse(localStorage.getItem('data')) || {}, // Ensure this is parsed correctly
+    loading: false,
+    error: null,
+};
 
-
-export const createAccount = createAsyncThunk('/auth/signup', async (data) => {
+export const createAccount = createAsyncThunk('/auth/signup', async (data, { rejectWithValue }) => {
     try {
-       const response = axiosInstance.post("/user/register",data) ;
-       toast.promise(response,{
-        loading: 'Wait, Creating your account',
-        success: (data) => {
-            return data?.data?.message;
-        },
-        error: "Failed creation"
-       })
-       return await response;
+        const response = await axiosInstance.post("/user/register", data);
+        return response.data;
     } catch (error) {
-        toast.error(error?.response?.data?.message);
+        const message = error?.response?.data?.message || "Failed creation";
+        return rejectWithValue(message);
     }
-})
+});
 
+export const login = createAsyncThunk('/auth/signin', async (data, { rejectWithValue }) => {
+    try {
+        const response = await axiosInstance.post("/user/login", data);
+        return response.data;
+    } catch (error) {
+        const message = error?.response?.data?.message || "Failed creation";
+        return rejectWithValue(message);
+    }
+});
 
 const authSlice = createSlice({
     name: "auth",
-    initialState: initailState,
-    reducers: {}
-}
-);
+    initialState,
+    reducers: {},
+    extraReducers: (builder) => {
+        builder
+            .addCase(createAccount.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(createAccount.fulfilled, (state, action) => {
+                state.loading = false;
+                state.isLoggedIn = true;
+                state.data = action.payload.user;
+                toast.success("Account created successfully!");
+            })
+            .addCase(createAccount.rejected, (state, action) => {
+                state.loading = false;
+                state.isLoggedIn = false;
+                state.error = action.payload;
+                toast.error(action.payload);
+            })
+            .addCase(login.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(login.fulfilled, (state, action) => {
+                state.loading = false;
+                state.isLoggedIn = true;
+                state.data = action.payload.user;
+                state.role = action.payload.user.role;
+                localStorage.setItem('isLoggedIn', true);
+                localStorage.setItem('data', JSON.stringify(action.payload.user));
+                localStorage.setItem('role', action.payload.user.role);
+                toast.success("Logged in successfully!");
+            })
+            .addCase(login.rejected, (state, action) => {
+                state.loading = false;
+                state.isLoggedIn = false;
+                state.error = action.payload;
+                toast.error(action.payload);
+            });
+    }
+});
 
 export default authSlice.reducer;
